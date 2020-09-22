@@ -1,6 +1,7 @@
 import cv2
 from enum import Enum
-
+import numpy as np
+from sympy.geometry import Point, Line
 
 class CocoPart(Enum):
     Nose = 0
@@ -229,6 +230,7 @@ def draw_humans(npimg, humans, imgcopy=False):
         npimg = np.copy(npimg)
     image_h, image_w = npimg.shape[:2]
     centers = {}
+    # hand_direction = {}
     for human in humans:
         # draw point
         for i in range(CocoPart.Background.value):
@@ -247,6 +249,41 @@ def draw_humans(npimg, humans, imgcopy=False):
 
             # npimg = cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
             cv2.line(npimg, centers[pair[0]], centers[pair[1]], CocoColors[pair_order], 3)
+        l_line = None
+        r_line = None
+        if 3 in centers and 4 in centers:
+            l_elbow_point = Point(centers[3][0], centers[3][1])
+            l_wrist_point = Point(centers[4][0], centers[4][1])
+            l_line = Line(l_elbow_point, l_wrist_point)
+        if 6 in centers and 7 in centers:
+            r_elbow_point = Point(centers[6][0], centers[6][1])
+            r_wrist_point = Point(centers[7][0], centers[7][1])
+            r_line = Line(r_elbow_point, r_wrist_point)
+
+        t_left = Point(0,0)
+        t_right = Point(image_w, 0)
+        b_left = Point(0, image_h)
+        b_right = Point(image_w, image_h)
+        t_margin = Line(t_left, t_right)
+        l_margin = Line(t_left, b_left)
+        r_margin = Line(t_right, b_right)
+        b_margin = Line(b_left, b_right)
+
+        if l_line:
+            intersect_point_1 = l_line.intersection(t_margin)[0]
+            x = tuple(l_wrist_point)
+            y = tuple(intersect_point_1)
+            cv2.line(npimg, x, y, (22,255,7), 2)
+            print(intersect_point_1)
+
+        
+        if r_line:
+            intersect_point_r = r_line.intersection(t_margin)[0]
+            x = tuple(r_wrist_point)
+            y = tuple(intersect_point_r)
+            cv2.line(npimg, x, y, (22,255,7), 2)
+
+            print(intersect_point_r)
 
     return npimg
     
